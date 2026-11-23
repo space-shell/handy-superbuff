@@ -36,5 +36,11 @@ fn main() {
     }
 
     let cli_args = CliArgs::parse();
+
+    // This fork must not update itself to an official release: release
+    // artifacts are signed with upstream's key, which this build trusts, so an
+    // accepted update would replace the fork.
+    std::env::set_var("HANDY_DISABLE_UPDATER", "1");
+
     handy_app_lib::run(cli_args)
 }
