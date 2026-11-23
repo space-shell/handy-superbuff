@@ -27,6 +27,8 @@ mod secure_input;
 mod settings;
 mod shortcut;
 mod signal_handle;
+#[allow(dead_code)]
+mod span_align;
 mod system_languages;
 mod transcription_coordinator;
 mod transcription_hook;
