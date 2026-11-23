@@ -45,3 +45,6 @@ result
 
 # Python bytecode (scripts/)
 __pycache__/
+
+# Phase 0 spike: generated output (spike/out/ is local only)
+spike/out/
