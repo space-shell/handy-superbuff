@@ -26,6 +26,11 @@
         "aarch64-linux"
       ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
+      # The dev shell is also offered on macOS; the package and the modules are not.
+      forDevShells = nixpkgs.lib.genAttrs (supportedSystems ++ [
+        "aarch64-darwin"
+        "x86_64-darwin"
+      ]);
       # Read version from Cargo.toml
       cargoToml = fromTOML (builtins.readFile ./src-tauri/Cargo.toml);
       version = cargoToml.package.version;
@@ -206,45 +211,74 @@
         };
 
       # Development shell for building from source
-      devShells = forAllSystems (
+      devShells = forDevShells (
         system:
         let
           pkgs = import nixpkgs {
             inherit system;
           };
-        in
-        {
-          default = pkgs.mkShell {
-            buildInputs = commonNativeDeps pkgs ++ (with pkgs; [
-              # Rust toolchain
-              rustc
-              cargo
-              rust-analyzer
-              clippy
-              # Frontend
-              nodejs
-              bun
-              # Build tools
-              cargo-tauri
-              pkg-config
-              rustPlatform.bindgenHook
+          # macOS needs none of the native libraries below: WebKit, the SDK and the
+          # linker are the system's. `rustup` installs the toolchain BUILD.md documents,
+          # and no compiler comes from Nix, so `cc` stays Apple's Command Line Tools.
+          darwinShell = {
+            packages = with pkgs; [
+              rustup
               cmake
-            ]);
+              pkg-config
+            ];
 
-            inherit (commonEnv pkgs)
-              GST_PLUGIN_SYSTEM_PATH_1_0;
-
-            LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [ pkgs.libayatana-appindicator pkgs.vulkan-loader ]}";
-
-            # Same as wrapGAppsHook4
-            XDG_DATA_DIRS = "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:${pkgs.hicolor-icon-theme}/share";
+            # CMake 4 rejects the minimum versions ggml's CMake files declare.
+            CMAKE_POLICY_VERSION_MINIMUM = "3.5";
 
             shellHook = ''
-              echo "Handy development environment"
+              echo "Handy development environment (macOS)"
+              # nixpkgs' rustup needs a home it may write to.
+              export RUSTUP_HOME="''${RUSTUP_HOME:-$HOME/.rustup}"
+              if ! rustup run stable rustc --version >/dev/null 2>&1; then
+                rustup toolchain install stable --profile minimal --component rustfmt clippy
+                rustup default stable
+              fi
               bun install
               echo "Run 'bun run tauri dev' to start"
             '';
           };
+        in
+        {
+          default =
+            if pkgs.stdenv.hostPlatform.isDarwin then
+              pkgs.mkShellNoCC darwinShell
+            else
+              pkgs.mkShell {
+                buildInputs = commonNativeDeps pkgs ++ (with pkgs; [
+                  # Rust toolchain
+                  rustc
+                  cargo
+                  rust-analyzer
+                  clippy
+                  # Frontend
+                  nodejs
+                  bun
+                  # Build tools
+                  cargo-tauri
+                  pkg-config
+                  rustPlatform.bindgenHook
+                  cmake
+                ]);
+
+                inherit (commonEnv pkgs)
+                  GST_PLUGIN_SYSTEM_PATH_1_0;
+
+                LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [ pkgs.libayatana-appindicator pkgs.vulkan-loader ]}";
+
+                # Same as wrapGAppsHook4
+                XDG_DATA_DIRS = "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:${pkgs.hicolor-icon-theme}/share";
+
+                shellHook = ''
+                  echo "Handy development environment"
+                  bun install
+                  echo "Run 'bun run tauri dev' to start"
+                '';
+              };
         }
       );
     };
