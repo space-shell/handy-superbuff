@@ -10,6 +10,9 @@ pub mod cli;
 mod clipboard;
 mod commands;
 pub mod engine_supervisor;
+// Not used by the app yet: the live output and voice selection changes come next.
+#[allow(dead_code)]
+mod field;
 mod helpers;
 mod input;
 mod language_detection;
