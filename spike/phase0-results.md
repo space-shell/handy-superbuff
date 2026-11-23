@@ -22,8 +22,8 @@ Every run ended with the test text deleted. Chrome and TextEdit windows were clo
 ## Findings
 
 1. Chromium apps answer with defaults unless their window is key: a selection reads as
-   (0, 0), a write reports success and changes nothing, `AXStringForRange` returns an
-   empty string, and the range arrives as `AXValueType` 4 instead of 1.
+   (0, 0), a write reports success and changes nothing, and `AXStringForRange` returns
+   an empty string.
 2. Chromium cuts `AXValue` and `AXNumberOfCharacters` at about 10,000 units. It cuts
    `AXStringForRange` at offset 200,000. `AXSelectedText` is not cut: 200,000 selected
    units came back whole, and a selection at 205,000 reads correctly.

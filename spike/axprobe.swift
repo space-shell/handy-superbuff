@@ -144,9 +144,8 @@ func rangeAttr(_ el: AXUIElement, _ name: String) -> Result<CFRange, AXError> {
         guard let v, CFGetTypeID(v) == AXValueGetTypeID() else { return .failure(.attributeUnsupported) }
         let ax = unsafeDowncast(v, to: AXValue.self)
         let type = AXValueGetType(ax)
-        // Chromium answers with AXValueType 4 (two 64-bit words) where other apps report 1 (CFRange).
-        // Both carry location and length as 64-bit integers.
-        guard type == .cfRange || type.rawValue == 4 else { return .failure(.attributeUnsupported) }
+        // kAXValueTypeCFRange is 4 in the SDK; CGPoint is 1.
+        guard type == .cfRange else { return .failure(.attributeUnsupported) }
         var words = [Int64](repeating: 0, count: 2)
         let ok = words.withUnsafeMutableBytes { buffer -> Bool in
             guard let base = buffer.baseAddress else { return false }
@@ -160,7 +159,7 @@ func rangeAttr(_ el: AXUIElement, _ name: String) -> Result<CFRange, AXError> {
 func rangeType(_ el: AXUIElement, _ name: String) -> String {
     guard case .success(let v?) = copyAttr(el, name), CFGetTypeID(v) == AXValueGetTypeID() else { return "n/a" }
     let type = AXValueGetType(unsafeDowncast(v, to: AXValue.self))
-    return type == .cfRange ? "1 (CFRange)" : String(type.rawValue)
+    return type == .cfRange ? "4 (CFRange)" : String(type.rawValue)
 }
 
 func textValue(_ el: AXUIElement) -> Result<String, AXError> { stringAttr(el, kAXValueAttribute) }
