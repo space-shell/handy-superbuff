@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Handy",
+  "productName": "Handy Superbuff",
   "version": "0.10.1",
-  "identifier": "com.pais.handy",
+  "identifier": "io.github.space-shell.handy-superbuff",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
